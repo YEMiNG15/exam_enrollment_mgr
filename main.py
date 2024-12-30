@@ -24,6 +24,8 @@ def init_db():
     exam_1 = Exam(title='Java Exam', date=datetime.date(2021, 1, 2),
                   location='W2301', max_candidates=100)
     candidate_0 = Candidate(name='Alice', phone_number='1234567890',
+    exam_0 = Exam(title='Python Exam', date=datetime.date(2021, 1, 1), location = 'Online')
+    exam_1 = Exam(title='Java Exam', date=datetime.date(2021, 1, 2), location='W2301')
                             registered_date=datetime.date(2021, 1, 1))
     candidate_1 = Candidate(name='Bob', phone_number='1234567891',
                             registered_date=datetime.date(2021, 1, 2))
@@ -46,10 +48,6 @@ def candidate_submenu():
     print("6. 回退到主菜单")
     print("7. 退出程序")
     return input("选择你要进行的操作: ")
-
-
-    def __repr__(self):
-        return f"<Candidate {self.name}-{self.phone_number}-{self.registered_date}>"
 
 
 def exam_submenu():

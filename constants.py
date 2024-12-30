@@ -13,7 +13,6 @@ TRANSLATION = {
     'title': '考试名称',
     'date': '考试日期',
     'location': '考试地点',
-    'max_candidates': '最大考生数',
     'registration_date': '报名日期',
     'candidate_id': '考生ID',
     'exam_id': '考试ID',

@@ -37,7 +37,6 @@ class Exam(Base):
     title = Column(String(200), nullable=False)
     date = Column(Date, nullable=False, default=datetime.date.today)
     location = Column(String(200), nullable=False)
-    max_candidates = Column(Integer, nullable=False)
     registrations = relationship(
         "Registration",
         back_populates="exam",
