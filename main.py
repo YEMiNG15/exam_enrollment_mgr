@@ -118,6 +118,8 @@ def registration_submenu():
     print("6. Back to main menu")
     print("7. Exit")
     return input("Please select an option: ")
+
+
 if __name__ == '__main__':
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
