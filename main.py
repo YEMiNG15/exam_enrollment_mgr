@@ -48,6 +48,10 @@ def candidate_submenu():
     return input("选择你要进行的操作: ")
 
 
+    def __repr__(self):
+        return f"<Candidate {self.name}-{self.phone_number}-{self.registered_date}>"
+
+
 def exam_submenu():
     print("1. 添加考试")
     print("2. 列出所有考试")
