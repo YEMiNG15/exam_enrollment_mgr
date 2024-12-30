@@ -19,18 +19,14 @@ def init_db():
     """
     global Base, engine, session
     Base.metadata.create_all(engine)
-    exam_0 = Exam(title='Python Exam', date=datetime.date(2021, 1, 1),
-                  location = 'Online', max_candidates = 100)
-    exam_1 = Exam(title='Java Exam', date=datetime.date(2021, 1, 2),
-                  location='W2301', max_candidates=100)
-    candidate_0 = Candidate(name='Alice', phone_number='1234567890',
     exam_0 = Exam(title='Python Exam', date=datetime.date(2021, 1, 1), location = 'Online')
     exam_1 = Exam(title='Java Exam', date=datetime.date(2021, 1, 2), location='W2301')
+    candidate_0 = Candidate(name='张三', phone_number='19518114514',
                             registered_date=datetime.date(2021, 1, 1))
-    candidate_1 = Candidate(name='Bob', phone_number='1234567891',
+    candidate_1 = Candidate(name='李四', phone_number='19511114514',
                             registered_date=datetime.date(2021, 1, 2))
-    candidate_2 = Candidate(name='Alice', phone_number='1234567893',
-                            registered_date=datetime.date(2021, 1, 1))
+    candidate_2 = Candidate(name='王五', phone_number='19513114514',
+                            registered_date=datetime.date(2021, 1, 3))
     session.add(exam_0)
     session.add(exam_1)
     session.add(candidate_0)
@@ -76,7 +72,7 @@ def select_object(obj_list):
     """
     从对象列表中选择一个对象
     :param obj_list: 对象列表
-    :return: 选择的对象
+    :return: list 只包含一个对象
     """
     print("从如下的结果中选择一个:")
     for i, obj in enumerate(obj_list):
@@ -88,7 +84,7 @@ def query_str_to_dict(query_str):
     """
     将查询字符串转换为字典
     :param query_str: 查询字符串，格式为"字段1=值1,字段2=值2,..."
-    :return: 查询字典，格式为{"字段1": "值1", "字段2": "值2", ...}
+    :return: dict 查询字典，格式为{"字段1": "值1", "字段2": "值2", ...}
     """
     return {msg[0]: msg[1] for msg in [msg.split('=') for msg in query_str.split(',')]}
 
@@ -97,7 +93,7 @@ def sole_result(func):
     """
     修饰器，使得函数只返回用户选择的对象
     :param func: 返回由若干个对象组成的列表的函数
-    :return: 返回一个只包含一个对象的列表的函数
+    :return: func 返回一个只包含一个对象的列表的函数
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -110,21 +106,27 @@ def sole_result(func):
 
 
 @sole_result
-def search_obj(obj_class, search_str):
+def search_obj(obj_class, search_str, verbose=True):
     """
     搜索对象
     :param obj_class: 要查询的对象类，可以从Candidate, Exam, Registration中选择
     :param search_str: 查询字符串，格式为"字段1=值1,字段2=值2,..."
-    :return: 查询结果，为对象列表
+    :param verbose: 是否打印错误信息
+    :return: list 查询结果，为对象列表
     """
     global session
     query_dict = query_str_to_dict(search_str)
+    query = session.query(obj_class)
     if not all([field in obj_class.ALLOWED_SEARCH_FIELDS for field in query_dict.keys()]):
-        e_print("不合法的查询字段")
-        return []
+        if verbose:
+            e_print("不合法的查询字段")
+        results = []
     else:
-        results = session.query(obj_class).filter_by(**query_dict).all()
-        return results
+        for field, value in query_dict.items():
+            query = query.filter(getattr(obj_class, field).like(f"%{value}%"))
+        else:
+            results = query.all()
+    return results
 
 
 def list_obj(obj_class):
@@ -143,31 +145,84 @@ def list_obj(obj_class):
 def add_obj(obj_class, query_str):
     """
     添加对象
-    :param obj_class: 要添加的对象类，可以从Candidate, Exam, Registration中选择
+    :param obj_class: 要添加的对象类，可以从Candidate, Exam中选择
     :param query_str: 查询字符串，格式为"字段1=值1,字段2=值2,..."
-    :return: None
+    :return: bool 添加是否成功
     """
     global session
     query_dict = query_str_to_dict(query_str)
-    new_obj = obj_class(**query_dict)
-    session.add(new_obj)
-    session.commit()
-    print(f"成功添加{TRANSLATION[obj_class.__name__]}: {new_obj}")
+    required_fields = obj_class.REQUIRED_FIELDS
+    optional_fields = obj_class.OPTIONAL_FIELDS
+    if not all([field in required_fields + optional_fields for field in query_dict.keys()]):
+        e_print("不合法的字段")
+        return False
+    if not all([field in query_dict.keys() for field in required_fields]):
+        e_print("缺少必要字段")
+        return False
+    try:
+        new_obj = obj_class(**query_dict)
+    except Exception as e:
+        e_print(f"未知错误: {e}")
+        return False
+    try:
+        session.add(new_obj)
+        session.commit()
+    except Exception as e:
+        e_print(f"数据库错误: {e}")
+        session.rollback()
+        return False
+    return True
 
 
-search_candidate = lambda x: search_obj(Candidate, x)
-search_exam = lambda x: search_obj(Exam, x)
-search_registration = lambda x: search_obj(Registration, x)
+def add_registration(query_str):
+    """
+    添加报名，因为报名对象的创建需要考生和考试对象，所以需要先确认考生和考试对象是否存在
+    :param query_str: 查询字符串，格式为"字段1=值1,字段2=值2,..."
+    :return: bool 添加是否成功
+    """
+    global session
+    query_dict = query_str_to_dict(query_str)
+    if not all([field in Registration.REQUIRED_FIELDS + Registration.OPTIONAL_FIELDS for field in query_dict.keys()]):
+        e_print("不合法的字段")
+        return False
+    if not all([field in query_dict.keys() for field in Registration.REQUIRED_FIELDS]):
+        e_print("缺少必要字段")
+        return False
+    candidate = search_candidate(f"id={query_dict['candidate_id']}", v=False)
+    exam = search_exam(f"id={query_dict['exam_id']}", v=False)
+    if not candidate or not exam:
+        e_print("找不到对应的考生或考试")
+        return False
+    try:
+        new_registration = Registration(**query_dict)
+    except Exception as e:
+        e_print(f"未知错误: {e}")
+        return False
+    try:
+        session.add(new_registration)
+        session.commit()
+    except Exception as e:
+        e_print(f"数据库错误: {e}")
+        session.rollback()
+        return False
+    return True
+
+
+search_candidate = lambda s, v=True: search_obj(Candidate, s, v)
+search_exam = lambda s, v=True: search_obj(Exam, s, v)
+search_registration = lambda s, v=True: search_obj(Registration, s, v)
 list_candidates = lambda: list_obj(Candidate)
 list_exams = lambda: list_obj(Exam)
 list_registrations = lambda: list_obj(Registration)
+add_candidate = lambda x: add_obj(Candidate, x)
+add_exam = lambda x: add_obj(Exam, x)
 
 
 if __name__ == '__main__':
     def test():
-        print(search_candidate('name=Alice'))
-        print(search_exam('title=Python Exam'))
-        list_exams()
+        list_registrations()
+        add_registration("candidate_id=1,exam_id=2")
+        list_registrations()
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
