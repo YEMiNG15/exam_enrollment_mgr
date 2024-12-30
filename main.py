@@ -1,65 +1,15 @@
-from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, Boolean, DateTime
-from sqlalchemy.orm import relationship, declarative_base, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from functools import wraps
+from models import Candidate, Exam, Registration
+from constants import DATABASE_URL, DATABASE_PATH, TRANSLATION
+import models
 import os
 import datetime
 
 
-# 数据库文件路径默认为脚本所在目录下的database.sqlite
-DATABASE_PATH = os.path.join(os.path.dirname(__file__), 'database.sqlite')
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
-
-
-Base = declarative_base()
-
-
-class Candidate(Base):
-    __tablename__ = 'candidates'
-    ALLOWED_SEARCH_FIELDS = ['name', 'phone_number']
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(100), nullable=False)
-    phone_number = Column(String(20), unique=True, nullable=False)
-    registered_date = Column(DateTime, nullable=False, default=datetime.datetime.now)
-    registrations = relationship(
-        "Registration",
-        back_populates="candidate",
-        cascade="all, delete-orphan"
-    )
-
-    def __repr__(self):
-        return f"<Candidate {self.name}-{self.phone_number}-{self.registered_date}>"
-
-
-class Exam(Base):
-    __tablename__ = 'exams'
-    ALLOWED_SEARCH_FIELDS = ['title', 'location']
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String(200), nullable=False)
-    date = Column(Date, nullable=False, default=datetime.date.today)
-    location = Column(String(200), nullable=False)
-    max_candidates = Column(Integer, nullable=False)
-    registrations = relationship(
-        "Registration",
-        back_populates="exam",
-        cascade="all, delete-orphan"
-    )
-
-    def __repr__(self):
-        return f"<Exam {self.title}-{self.location}-{self.date}>"
-
-
-class Registration(Base):
-    __tablename__ = 'registrations'
-    ALLOWED_SEARCH_FIELDS = ['candidate_id', 'exam_id']
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    candidate_id = Column(Integer, ForeignKey('candidates.id'), nullable=False)
-    exam_id = Column(Integer, ForeignKey('exams.id'), nullable=False)
-    registration_date = Column(DateTime, nullable=False, default=datetime.datetime.now)
-    candidate = relationship("Candidate", back_populates="registrations")
-    exam = relationship("Exam", back_populates="registrations")
-
-    def __repr__(self):
-        return f"<Registration {self.exam.title} - {self.candidate.name} - {self.registration_date}>"
+e_print = lambda x: print(f"[ERROR] {x}")
+Base = models.Base
 
 
 def init_db():
@@ -88,44 +38,144 @@ def init_db():
 
 
 def candidate_submenu():
-    print("1. Add a candidate")
-    print("2. List all candidates")
-    print("3. Search for a candidate")
-    print("4. Update a candidate")
-    print("5. Delete a candidate")
-    print("6. Back to main menu")
-    print("7. Exit")
-    return input("Please select an option: ")
+    print("1. 添加考生")
+    print("2. 列出所有考生")
+    print("3. 查询考生")
+    print("4. 更新考生信息")
+    print("5. 删除考生")
+    print("6. 回退到主菜单")
+    print("7. 退出程序")
+    return input("选择你要进行的操作: ")
+
+
+    def __repr__(self):
+        return f"<Candidate {self.name}-{self.phone_number}-{self.registered_date}>"
 
 
 def exam_submenu():
-    print("1. Add an exam")
-    print("2. List all exams")
-    print("3. Search for an exam")
-    print("4. Update an exam")
-    print("5. Delete an exam")
-    print("6. Back to main menu")
-    print("7. Exit")
-    return input("Please select an option: ")
+    print("1. 添加考试")
+    print("2. 列出所有考试")
+    print("3. 查询考试")
+    print("4. 更新考试信息")
+    print("5. 删除考试")
+    print("6. 回退到主菜单")
+    print("7. 退出程序")
+    return input("选择你要进行的操作: ")
 
 
 def registration_submenu():
-    print("1. Register a candidate for an exam")
-    print("2. List all registrations")
-    print("3. Search for a registration")
-    print("4. Update a registration")
-    print("5. Delete a registration")
-    print("6. Back to main menu")
-    print("7. Exit")
-    return input("Please select an option: ")
+    print("1. 添加报名")
+    print("2. 列出所有报名")
+    print("3. 查询报名")
+    print("4. 更新报名信息")
+    print("5. 删除报名")
+    print("6. 回退到主菜单")
+    print("7. 退出程序")
+    return input("选择你要进行的操作: ")
+
+
+def select_object(obj_list):
+    """
+    从对象列表中选择一个对象
+    :param obj_list: 对象列表
+    :return: 选择的对象
+    """
+    print("从如下的结果中选择一个:")
+    for i, obj in enumerate(obj_list):
+        print(f"{i+1}. {obj}")
+    return obj_list[int(input("选择: ")) - 1]
+
+
+def query_str_to_dict(query_str):
+    """
+    将查询字符串转换为字典
+    :param query_str: 查询字符串，格式为"字段1=值1,字段2=值2,..."
+    :return: 查询字典，格式为{"字段1": "值1", "字段2": "值2", ...}
+    """
+    return {msg[0]: msg[1] for msg in [msg.split('=') for msg in query_str.split(',')]}
+
+
+def sole_result(func):
+    """
+    修饰器，使得函数只返回用户选择的对象
+    :param func: 返回由若干个对象组成的列表的函数
+    :return: 返回一个只包含一个对象的列表的函数
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        results = func(*args, **kwargs)
+        if len(results) > 1:
+            return [select_object(results)]
+        else:
+            return results
+    return wrapper
+
+
+@sole_result
+def search_obj(obj_class, search_str):
+    """
+    搜索对象
+    :param obj_class: 要查询的对象类，可以从Candidate, Exam, Registration中选择
+    :param search_str: 查询字符串，格式为"字段1=值1,字段2=值2,..."
+    :return: 查询结果，为对象列表
+    """
+    global session
+    query_dict = query_str_to_dict(search_str)
+    if not all([field in obj_class.ALLOWED_SEARCH_FIELDS for field in query_dict.keys()]):
+        e_print("不合法的查询字段")
+        return []
+    else:
+        results = session.query(obj_class).filter_by(**query_dict).all()
+        return results
+
+
+def list_obj(obj_class):
+    """
+    列出所有对象
+    :param obj_class: 要列出的对象类，可以从Candidate, Exam, Registration中选择
+    :return: None
+    """
+    global session
+    results = session.query(obj_class).all()
+    print(f"{TRANSLATION[obj_class.__name__]}列表:")
+    for i in range(len(results)):
+        print(f"{i+1}. {results[i]}")
+
+
+def add_obj(obj_class, query_str):
+    """
+    添加对象
+    :param obj_class: 要添加的对象类，可以从Candidate, Exam, Registration中选择
+    :param query_str: 查询字符串，格式为"字段1=值1,字段2=值2,..."
+    :return: None
+    """
+    global session
+    query_dict = query_str_to_dict(query_str)
+    new_obj = obj_class(**query_dict)
+    session.add(new_obj)
+    session.commit()
+    print(f"成功添加{TRANSLATION[obj_class.__name__]}: {new_obj}")
+
+
+search_candidate = lambda x: search_obj(Candidate, x)
+search_exam = lambda x: search_obj(Exam, x)
+search_registration = lambda x: search_obj(Registration, x)
+list_candidates = lambda: list_obj(Candidate)
+list_exams = lambda: list_obj(Exam)
+list_registrations = lambda: list_obj(Registration)
 
 
 if __name__ == '__main__':
+    def test():
+        print(search_candidate('name=Alice'))
+        print(search_exam('title=Python Exam'))
+        list_exams()
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
     if not os.path.exists(DATABASE_PATH):
         # 若数据库文件不存在，则初始化数据库
         init_db()
+    test()
     session.close()
     # Base.metadata.drop_all(engine)
