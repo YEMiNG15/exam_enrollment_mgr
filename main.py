@@ -16,7 +16,7 @@ def input_text(msg):
     """
     获取用户输入的非空字符串
     :param msg: str 提示信息
-    :return: str 用户输出的非空字符串
+    :return: str 用户输入的非空字符串
     """
     i = input(msg)
     while i.strip() == '':
