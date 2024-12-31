@@ -174,6 +174,44 @@ def add_obj(obj_class, query_str):
     return True
 
 
+def update_obj(obj_class, query_str_0, query_str_1, verbose=True):
+    """
+    更新对象
+    :param obj_class: 要更新的对象类，可以从Candidate, Exam, Registration中选择
+    :param query_str_0: 查询字符串，格式为"字段1=值1,字段2=值2,..."，用于查询要更新的对象
+    :param query_str_1: 查询字符串，格式为"字段1=值1,字段2=值2,..."，用于更新对象
+    :param verbose: 是否打印错误信息
+    :return: bool 更新是否成功
+    """
+    global session
+    query_dict_0 = query_str_to_dict(query_str_0)
+    query_dict_1 = query_str_to_dict(query_str_1)
+    if not all([field in obj_class.ALLOWED_SEARCH_FIELDS for field in query_dict_0.keys()]):
+        if verbose:
+            e_print("不合法的查询字段")
+        return False
+    if not all([field in obj_class.ALLOWED_MODIFY_FIELDS for field in query_dict_1.keys()]):
+        if verbose:
+            e_print("不合法的修改字段")
+        return False
+    obj = search_obj(obj_class, query_str_0, verbose=verbose)
+    if not obj:
+        if verbose:
+            e_print("找不到对应的对象")
+        return False
+    for field, value in query_dict_1.items():
+        setattr(obj[0], field, value)
+    try:
+        session.add(obj[0])
+        session.commit()
+    except Exception as e:
+        e_print(f"数据库错误: {e}")
+        session.rollback()
+        return False
+    else:
+        return True
+
+
 def add_registration(query_str):
     """
     添加报名，因为报名对象的创建需要考生和考试对象，所以需要先确认考生和考试对象是否存在
@@ -216,13 +254,16 @@ list_exams = lambda: list_obj(Exam)
 list_registrations = lambda: list_obj(Registration)
 add_candidate = lambda x: add_obj(Candidate, x)
 add_exam = lambda x: add_obj(Exam, x)
+update_candidate = lambda q_1, q_2, v=True: update_obj(Candidate, q_1, q_2, v)
+update_exam = lambda q_1, q_2, v=True: update_obj(Exam, q_1, q_2, v)
+update_registration = lambda q_1, q_2, v=True: update_obj(Registration, q_1, q_2, v)
 
 
 if __name__ == '__main__':
     def test():
-        list_registrations()
-        add_registration("candidate_id=1,exam_id=2")
-        list_registrations()
+        list_candidates()
+        update_candidate("id=1", "name=哈哈哈")
+        list_candidates()
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
