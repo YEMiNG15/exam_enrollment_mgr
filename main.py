@@ -48,39 +48,6 @@ def init_db():
     session.commit()
 
 
-def candidate_submenu():
-    print("1. 添加考生")
-    print("2. 列出所有考生")
-    print("3. 查询考生")
-    print("4. 更新考生信息")
-    print("5. 删除考生")
-    print("6. 回退到主菜单")
-    print("7. 退出程序")
-    return input("选择你要进行的操作: ")
-
-
-def exam_submenu():
-    print("1. 添加考试")
-    print("2. 列出所有考试")
-    print("3. 查询考试")
-    print("4. 更新考试信息")
-    print("5. 删除考试")
-    print("6. 回退到主菜单")
-    print("7. 退出程序")
-    return input("选择你要进行的操作: ")
-
-
-def registration_submenu():
-    print("1. 添加报名")
-    print("2. 列出所有报名")
-    print("3. 查询报名")
-    print("4. 更新报名信息")
-    print("5. 删除报名")
-    print("6. 回退到主菜单")
-    print("7. 退出程序")
-    return input("选择你要进行的操作: ")
-
-
 def select_object(obj_list):
     """
     从对象列表中选择一个对象
@@ -306,6 +273,39 @@ update_registration = lambda q_1, q_2, v=True: update_obj(Registration, q_1, q_2
 del_candidate = lambda x, v=True: del_obj(Candidate, x, v)
 del_exam = lambda x, v=True: del_obj(Exam, x, v)
 del_registration = lambda x, v=True: del_obj(Registration, x, v)
+
+
+def candidate_submenu():
+    print("1. 添加考生")
+    print("2. 列出所有考生")
+    print("3. 查询考生")
+    print("4. 更新考生信息")
+    print("5. 删除考生")
+    print("6. 回退到主菜单")
+    print("7. 退出程序")
+    return input("选择你要进行的操作: ")
+
+
+def exam_submenu():
+    print("1. 添加考试")
+    print("2. 列出所有考试")
+    print("3. 查询考试")
+    print("4. 更新考试信息")
+    print("5. 删除考试")
+    print("6. 回退到主菜单")
+    print("7. 退出程序")
+    return input("选择你要进行的操作: ")
+
+
+def registration_submenu():
+    print("1. 添加报名")
+    print("2. 列出所有报名")
+    print("3. 查询报名")
+    print("4. 更新报名信息")
+    print("5. 删除报名")
+    print("6. 回退到主菜单")
+    print("7. 退出程序")
+    return input("选择你要进行的操作: ")
 
 
 if __name__ == '__main__':
