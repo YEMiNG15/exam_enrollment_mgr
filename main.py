@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from functools import wraps
 from models import Candidate, Exam, Registration
-from constants import DATABASE_URL, DATABASE_PATH, TRANSLATION
+from constants import DATABASE_URL, DATABASE_PATH, TRANSLATION, SUBMENUS, HELP_DOC
 import models
 import os
 import datetime
@@ -279,37 +279,40 @@ del_exam = lambda x, v=True: del_obj(Exam, x, v)
 del_registration = lambda x, v=True: del_obj(Registration, x, v)
 
 
-def candidate_submenu():
-    print("1. 添加考生")
-    print("2. 列出所有考生")
-    print("3. 查询考生")
-    print("4. 更新考生信息")
-    print("5. 删除考生")
-    print("6. 回退到主菜单")
-    print("7. 退出程序")
-    return input("选择你要进行的操作: ")
+def submenu(obj_class):
+    """
+    打印子菜单并获取用户输入
+    :param obj_class: 要打印子菜单的对象类，可以从Candidate, Exam, Registration中选择
+    :return: str 用户输入的选项
+    """
+    print_str = f"-----{TRANSLATION[obj_class.__name__]}管理------\n"
+    for i, item in enumerate(SUBMENUS[obj_class.__name__]):
+        print_str += f"{i+1}. {item}\n"
+    print_str += "-------------------"
+    print(print_str)
+    return input_text("选择你要进行的操作: ")
 
 
-def exam_submenu():
-    print("1. 添加考试")
-    print("2. 列出所有考试")
-    print("3. 查询考试")
-    print("4. 更新考试信息")
-    print("5. 删除考试")
-    print("6. 回退到主菜单")
-    print("7. 退出程序")
-    return input("选择你要进行的操作: ")
+def main_menu():
+    """
+    打印主菜单并获取用户输入
+    :return: str 用户输入的选项
+    """
+    print_str = "----------主菜单----------\n"
+    for i, item in enumerate(SUBMENUS['main']):
+        print_str += f"{i+1}. {item}\n"
+    print_str += "------------------------"
+    print(print_str)
+    return input_text("选择你要进行的操作: ")
 
 
-def registration_submenu():
-    print("1. 添加报名")
-    print("2. 列出所有报名")
-    print("3. 查询报名")
-    print("4. 更新报名信息")
-    print("5. 删除报名")
-    print("6. 回退到主菜单")
-    print("7. 退出程序")
-    return input("选择你要进行的操作: ")
+def print_help(obj_class):
+    """
+    打印帮助文档
+    :param obj_class: 要打印帮助文档的对象类，可以从Candidate, Exam, Registration中选择
+    :return: None
+    """
+    print(HELP_DOC[obj_class.__name__])
 
 
 if __name__ == '__main__':
@@ -326,6 +329,78 @@ if __name__ == '__main__':
     if not os.path.exists(DATABASE_PATH):
         # 若数据库文件不存在，则初始化数据库
         init_db()
-    test()
-    session.close()
-    # Base.metadata.drop_all(engine)
+    while True:
+        choice = main_menu()
+        if choice == '1':
+            while True:
+                choice = submenu(Candidate)
+                if choice == '1':
+                    add_candidate(input_text("创建字符串: "))
+                elif choice == '2':
+                    list_candidates()
+                elif choice == '3':
+                    search_candidate(input_text("查询字符串: "))
+                elif choice == '4':
+                    update_candidate(input_text("查询字符串: "), input_text("更新字符串: "))
+                elif choice == '5':
+                    del_candidate(input_text("查询字符串: "))
+                elif choice == '6':
+                    print_help(Candidate)
+                elif choice == '7':
+                    break
+                elif choice == '8':
+                    session.close()
+                    exit()
+                else:
+                    e_print("无效的选项")
+        elif choice == '2':
+            while True:
+                choice = submenu(Exam)
+                if choice == '1':
+                    add_exam(input_text("创建字符串: "))
+                elif choice == '2':
+                    list_exams()
+                elif choice == '3':
+                    search_exam(input_text("查询字符串: "))
+                elif choice == '4':
+                    update_exam(input_text("查询字符串: "), input_text("更新字符串: "))
+                elif choice == '5':
+                    del_exam(input_text("查询字符串: "))
+                elif choice == '6':
+                    print_help(Exam)
+                elif choice == '7':
+                    break
+                elif choice == '8':
+                    session.close()
+                    exit()
+                else:
+                    e_print("无效的选项")
+        elif choice == '3':
+            while True:
+                choice = submenu(Registration)
+                if choice == '1':
+                    add_registration(input_text("考生查询字符串: "), input_text("考试查询字符串: "))
+                elif choice == '2':
+                    list_registrations()
+                elif choice == '3':
+                    search_registration(input_text("查询字符串: "))
+                elif choice == '4':
+                    update_registration(input_text("查询字符串: "), input_text("更新字符串: "))
+                elif choice == '5':
+                    del_registration(input_text("查询字符串: "))
+                elif choice == '6':
+                    print_help(Registration)
+                elif choice == '7':
+                    break
+                elif choice == '8':
+                    session.close()
+                    exit()
+                else:
+                    e_print("无效的选项")
+        elif choice == '4':
+            reset_db()
+        elif choice == '5':
+            session.close()
+            exit()
+        else:
+            e_print("无效的选项")
