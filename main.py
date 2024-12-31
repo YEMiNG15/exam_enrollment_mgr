@@ -12,6 +12,19 @@ e_print = lambda x: print(f"[ERROR] {x}")
 Base = models.Base
 
 
+def input_text(msg):
+    """
+    使用户输入非空字符串
+    :param msg: 提示内容
+    :return: str 用户输出的非空字符串
+    """
+    i = input(msg)
+    while i.strip() == '':
+        e_print("不能为空")
+        i = input(msg)
+    return i
+
+
 def init_db():
     """
     初始化数据库，创建表并插入一些示例数据
