@@ -48,39 +48,6 @@ def init_db():
     session.commit()
 
 
-def candidate_submenu():
-    print("1. 添加考生")
-    print("2. 列出所有考生")
-    print("3. 查询考生")
-    print("4. 更新考生信息")
-    print("5. 删除考生")
-    print("6. 回退到主菜单")
-    print("7. 退出程序")
-    return input("选择你要进行的操作: ")
-
-
-def exam_submenu():
-    print("1. 添加考试")
-    print("2. 列出所有考试")
-    print("3. 查询考试")
-    print("4. 更新考试信息")
-    print("5. 删除考试")
-    print("6. 回退到主菜单")
-    print("7. 退出程序")
-    return input("选择你要进行的操作: ")
-
-
-def registration_submenu():
-    print("1. 添加报名")
-    print("2. 列出所有报名")
-    print("3. 查询报名")
-    print("4. 更新报名信息")
-    print("5. 删除报名")
-    print("6. 回退到主菜单")
-    print("7. 退出程序")
-    return input("选择你要进行的操作: ")
-
-
 def select_object(obj_list):
     """
     从对象列表中选择一个对象
@@ -210,13 +177,46 @@ def update_obj(obj_class, query_str_0, query_str_1, verbose=True):
     obj = search_obj(obj_class, query_str_0, verbose=verbose)
     if not obj:
         if verbose:
-            e_print("找不到对应的对象")
+            e_print(f"找不到对应的{TRANSLATION[obj_class.__name__]}")
         return False
     for field, value in query_dict_1.items():
         setattr(obj[0], field, value)
     try:
         session.add(obj[0])
         session.commit()
+    except Exception as e:
+        e_print(f"数据库错误: {e}")
+        session.rollback()
+        return False
+    else:
+        return True
+
+
+def del_obj(obj_class, query_str, verbose=True):
+    """
+    删除对象
+    :param obj_class: 要删除的对象类，可以从Candidate, Exam, Registration中选择
+    :param query_str: 查询字符串，格式为"字段1=值1,字段2=值2,..."
+    :param verbose: 是否打印错误信息和二次确认
+    :return: bool 删除是否成功
+    """
+    global session
+    query_dict = query_str_to_dict(query_str)
+    if not all([field in obj_class.ALLOWED_SEARCH_FIELDS for field in query_dict.keys()]):
+        if verbose:
+            e_print("不合法的查询字段")
+        return False
+    obj = search_obj(obj_class, query_str)
+    if not obj:
+        if verbose:
+            e_print(f"找不到对应的{TRANSLATION[obj_class.__name__]}")
+        return False
+    try:
+        if not verbose or input(f"确定要删除{obj[0]}吗？(y/n): ").lower() == 'y':
+            session.delete(obj[0])
+            session.commit()
+        else:
+            return False
     except Exception as e:
         e_print(f"数据库错误: {e}")
         session.rollback()
@@ -270,13 +270,52 @@ add_exam = lambda x: add_obj(Exam, x)
 update_candidate = lambda q_1, q_2, v=True: update_obj(Candidate, q_1, q_2, v)
 update_exam = lambda q_1, q_2, v=True: update_obj(Exam, q_1, q_2, v)
 update_registration = lambda q_1, q_2, v=True: update_obj(Registration, q_1, q_2, v)
+del_candidate = lambda x, v=True: del_obj(Candidate, x, v)
+del_exam = lambda x, v=True: del_obj(Exam, x, v)
+del_registration = lambda x, v=True: del_obj(Registration, x, v)
+
+
+def candidate_submenu():
+    print("1. 添加考生")
+    print("2. 列出所有考生")
+    print("3. 查询考生")
+    print("4. 更新考生信息")
+    print("5. 删除考生")
+    print("6. 回退到主菜单")
+    print("7. 退出程序")
+    return input("选择你要进行的操作: ")
+
+
+def exam_submenu():
+    print("1. 添加考试")
+    print("2. 列出所有考试")
+    print("3. 查询考试")
+    print("4. 更新考试信息")
+    print("5. 删除考试")
+    print("6. 回退到主菜单")
+    print("7. 退出程序")
+    return input("选择你要进行的操作: ")
+
+
+def registration_submenu():
+    print("1. 添加报名")
+    print("2. 列出所有报名")
+    print("3. 查询报名")
+    print("4. 更新报名信息")
+    print("5. 删除报名")
+    print("6. 回退到主菜单")
+    print("7. 退出程序")
+    return input("选择你要进行的操作: ")
 
 
 if __name__ == '__main__':
     def test():
-        list_candidates()
-        update_candidate("id=1", "name=哈哈哈")
-        list_candidates()
+        add_exam("title=C# Exam,location=W2302")
+        list_exams()
+        update_exam("title=C# Exam", "title=C# Exam,location=W2303")
+        list_exams()
+        del_exam("title=C# Exam")
+        list_exams()
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
