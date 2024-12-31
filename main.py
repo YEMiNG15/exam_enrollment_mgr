@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from functools import wraps
 from models import Candidate, Exam, Registration
-from constants import DATABASE_URL, DATABASE_PATH, TRANSLATION
+from constants import DATABASE_URL, DATABASE_PATH, TRANSLATION, SUBMENUS, HELP_DOC
 import models
 import os
 import datetime
@@ -10,6 +10,11 @@ import datetime
 
 e_print = lambda x: print(f"[ERROR] {x}")
 Base = models.Base
+choice_map = {
+    '1': Candidate,
+    '2': Exam,
+    '3': Registration
+}
 
 
 def input_text(msg):
@@ -18,10 +23,10 @@ def input_text(msg):
     :param msg: str 提示信息
     :return: str 用户输入的非空字符串
     """
-    i = input(msg)
+    i = input(msg).strip()
     while i.strip() == '':
-        e_print("不能为空")
-        i = input(msg)
+        e_print("不接受空输入")
+        i = input(msg).strip()
     return i
 
 
@@ -48,6 +53,16 @@ def init_db():
     session.commit()
 
 
+def reset_db():
+    """
+    重置数据库，删除所有表并重新创建, 并插入一些示例数据
+    :return: None
+    """
+    global Base, engine
+    Base.metadata.drop_all(engine)
+    init_db()
+
+
 def select_object(obj_list):
     """
     从对象列表中选择一个对象
@@ -66,7 +81,11 @@ def query_str_to_dict(query_str):
     :param query_str: 查询字符串，格式为"字段1=值1,字段2=值2,..."
     :return: dict 查询字典，格式为{"字段1": "值1", "字段2": "值2", ...}
     """
-    return {msg[0]: msg[1] for msg in [msg.split('=') for msg in query_str.split(',')]}
+    try:
+        return {msg[0]: msg[1] for msg in [msg.split('=') for msg in query_str.split(',')]}
+    except IndexError:
+        e_print("不合法的输入，请重新启动程序!")
+        exit()
 
 
 def sole_result(func):
@@ -225,27 +244,21 @@ def del_obj(obj_class, query_str, verbose=True):
         return True
 
 
-def add_registration(query_str):
+def add_registration(query_str_0, query_str_1):
     """
     添加报名，因为报名对象的创建需要考生和考试对象，所以需要先确认考生和考试对象是否存在
-    :param query_str: 查询字符串，格式为"字段1=值1,字段2=值2,..."
+    :param query_str_0: 查询字符串，格式为"字段1=值1,字段2=值2,..."，用于查询考生
+    :param query_str_1: 查询字符串，格式为"字段1=值1,字段2=值2,..."，用于查询考试
     :return: bool 添加是否成功
     """
     global session
-    query_dict = query_str_to_dict(query_str)
-    if not all([field in Registration.REQUIRED_FIELDS + Registration.OPTIONAL_FIELDS for field in query_dict.keys()]):
-        e_print("不合法的字段")
-        return False
-    if not all([field in query_dict.keys() for field in Registration.REQUIRED_FIELDS]):
-        e_print("缺少必要字段")
-        return False
-    candidate = search_candidate(f"id={query_dict['candidate_id']}", v=False)
-    exam = search_exam(f"id={query_dict['exam_id']}", v=False)
+    candidate = search_obj(Candidate, query_str_0, verbose=False)
+    exam = search_obj(Exam, query_str_1, verbose=False)
     if not candidate or not exam:
         e_print("找不到对应的考生或考试")
         return False
     try:
-        new_registration = Registration(**query_dict)
+        new_registration = Registration(candidate=candidate[0], exam=exam[0])
     except Exception as e:
         e_print(f"未知错误: {e}")
         return False
@@ -259,69 +272,81 @@ def add_registration(query_str):
     return True
 
 
-search_candidate = lambda s, v=True: search_obj(Candidate, s, v)
-search_exam = lambda s, v=True: search_obj(Exam, s, v)
-search_registration = lambda s, v=True: search_obj(Registration, s, v)
-list_candidates = lambda: list_obj(Candidate)
-list_exams = lambda: list_obj(Exam)
-list_registrations = lambda: list_obj(Registration)
-add_candidate = lambda x: add_obj(Candidate, x)
-add_exam = lambda x: add_obj(Exam, x)
-update_candidate = lambda q_1, q_2, v=True: update_obj(Candidate, q_1, q_2, v)
-update_exam = lambda q_1, q_2, v=True: update_obj(Exam, q_1, q_2, v)
-update_registration = lambda q_1, q_2, v=True: update_obj(Registration, q_1, q_2, v)
-del_candidate = lambda x, v=True: del_obj(Candidate, x, v)
-del_exam = lambda x, v=True: del_obj(Exam, x, v)
-del_registration = lambda x, v=True: del_obj(Registration, x, v)
+def submenu(obj_class):
+    """
+    打印子菜单并获取用户输入
+    :param obj_class: 要打印子菜单的对象类，可以从Candidate, Exam, Registration中选择
+    :return: str 用户输入的选项
+    """
+    print_str = f"-----{TRANSLATION[obj_class.__name__]}管理------\n"
+    for i, item in enumerate(SUBMENUS[obj_class.__name__]):
+        print_str += f"{i+1}. {item}\n"
+    print_str += "-------------------"
+    print(print_str)
+    return input_text("选择你要进行的操作: ")
 
 
-def candidate_submenu():
-    print("1. 添加考生")
-    print("2. 列出所有考生")
-    print("3. 查询考生")
-    print("4. 更新考生信息")
-    print("5. 删除考生")
-    print("6. 回退到主菜单")
-    print("7. 退出程序")
-    return input("选择你要进行的操作: ")
+def main_menu():
+    """
+    打印主菜单并获取用户输入
+    :return: str 用户输入的选项
+    """
+    print_str = "----------主菜单----------\n"
+    for i, item in enumerate(SUBMENUS['main']):
+        print_str += f"{i+1}. {item}\n"
+    print_str += "------------------------"
+    print(print_str)
+    return input_text("选择你要进行的操作: ")
 
 
-def exam_submenu():
-    print("1. 添加考试")
-    print("2. 列出所有考试")
-    print("3. 查询考试")
-    print("4. 更新考试信息")
-    print("5. 删除考试")
-    print("6. 回退到主菜单")
-    print("7. 退出程序")
-    return input("选择你要进行的操作: ")
-
-
-def registration_submenu():
-    print("1. 添加报名")
-    print("2. 列出所有报名")
-    print("3. 查询报名")
-    print("4. 更新报名信息")
-    print("5. 删除报名")
-    print("6. 回退到主菜单")
-    print("7. 退出程序")
-    return input("选择你要进行的操作: ")
+def print_help(obj_class):
+    """
+    打印帮助文档
+    :param obj_class: 要打印帮助文档的对象类，可以从Candidate, Exam, Registration中选择
+    :return: None
+    """
+    print(HELP_DOC[obj_class.__name__])
 
 
 if __name__ == '__main__':
-    def test():
-        add_exam("title=C# Exam,location=W2302")
-        list_exams()
-        update_exam("title=C# Exam", "title=C# Exam,location=W2303")
-        list_exams()
-        del_exam("title=C# Exam")
-        list_exams()
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
     if not os.path.exists(DATABASE_PATH):
         # 若数据库文件不存在，则初始化数据库
         init_db()
-    test()
-    session.close()
-    # Base.metadata.drop_all(engine)
+    while True:
+        choice = main_menu()
+        if choice in choice_map.keys():
+            chosen_obj_class = choice_map[choice]
+            while True:
+                choice = submenu(chosen_obj_class)
+                if choice == '1':
+                    if chosen_obj_class == Registration:
+                        add_registration(input_text("考生查询字符串: "), input_text("考试查询字符串: "))
+                    else:
+                        add_obj(chosen_obj_class, input_text("创建字符串: "))
+                elif choice == '2':
+                    list_obj(chosen_obj_class)
+                elif choice == '3':
+                    search_obj(chosen_obj_class, input_text("查询字符串: "))
+                elif choice == '4':
+                    update_obj(chosen_obj_class, input_text("查询字符串: "), input_text("更新字符串: "))
+                elif choice == '5':
+                    del_obj(chosen_obj_class, input_text("查询字符串: "))
+                elif choice == '6':
+                    print_help(chosen_obj_class)
+                elif choice == '7':
+                    break
+                elif choice == '8':
+                    session.close()
+                    exit()
+                else:
+                    e_print("无效的选项")
+        elif choice == '4':
+            reset_db()
+        elif choice == '5':
+            session.close()
+            exit()
+        else:
+            e_print("无效的选项")
