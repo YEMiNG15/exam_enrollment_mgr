@@ -329,7 +329,11 @@ if __name__ == '__main__':
                 elif choice == '2':
                     list_obj(chosen_obj_class)
                 elif choice == '3':
-                    search_obj(chosen_obj_class, input_text("查询字符串: "))
+                    results = search_obj(chosen_obj_class, input_text("查询字符串: "))
+                    if results:
+                        print(f"查询结果：\n{', '.join([str(result) for result in results])}")
+                    else:
+                        print(f"找不到对应的{TRANSLATION[chosen_obj_class.__name__]}")
                 elif choice == '4':
                     update_obj(chosen_obj_class, input_text("查询字符串: "), input_text("更新字符串: "))
                 elif choice == '5':
