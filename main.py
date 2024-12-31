@@ -81,7 +81,11 @@ def query_str_to_dict(query_str):
     :param query_str: 查询字符串，格式为"字段1=值1,字段2=值2,..."
     :return: dict 查询字典，格式为{"字段1": "值1", "字段2": "值2", ...}
     """
-    return {msg[0]: msg[1] for msg in [msg.split('=') for msg in query_str.split(',')]}
+    try:
+        return {msg[0]: msg[1] for msg in [msg.split('=') for msg in query_str.split(',')]}
+    except IndexError:
+        e_print("不合法的输入，请重新启动程序!")
+        exit()
 
 
 def sole_result(func):
