@@ -14,8 +14,8 @@ Base = models.Base
 
 def input_text(msg):
     """
-    使用户输入非空字符串
-    :param msg: 提示内容
+    获取用户输入的非空字符串
+    :param msg: str 提示信息
     :return: str 用户输出的非空字符串
     """
     i = input(msg)
