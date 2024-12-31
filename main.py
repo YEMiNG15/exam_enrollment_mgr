@@ -48,6 +48,16 @@ def init_db():
     session.commit()
 
 
+def reset_db():
+    """
+    重置数据库，删除所有表并重新创建, 并插入一些示例数据
+    :return: None
+    """
+    global Base, engine
+    Base.metadata.drop_all(engine)
+    init_db()
+
+
 def select_object(obj_list):
     """
     从对象列表中选择一个对象
