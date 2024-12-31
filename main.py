@@ -318,24 +318,24 @@ if __name__ == '__main__':
     while True:
         choice = main_menu()
         if choice in choice_map.keys():
-            obj_class = choice_map[choice]
+            chonsen_obj_class = choice_map[choice]
             while True:
-                choice = submenu(obj_class)
+                choice = submenu(chonsen_obj_class)
                 if choice == '1':
-                    if obj_class == Registration:
+                    if chonsen_obj_class == Registration:
                         add_registration(input_text("考生查询字符串: "), input_text("考试查询字符串: "))
                     else:
-                        add_obj(obj_class, input_text("创建字符串: "))
+                        add_obj(chonsen_obj_class, input_text("创建字符串: "))
                 elif choice == '2':
-                    list_obj(obj_class)
+                    list_obj(chonsen_obj_class)
                 elif choice == '3':
-                    search_obj(obj_class, input_text("查询字符串: "))
+                    search_obj(chonsen_obj_class, input_text("查询字符串: "))
                 elif choice == '4':
-                    update_obj(obj_class, input_text("查询字符串: "), input_text("更新字符串: "))
+                    update_obj(chonsen_obj_class, input_text("查询字符串: "), input_text("更新字符串: "))
                 elif choice == '5':
-                    del_obj(obj_class, input_text("查询字符串: "))
+                    del_obj(chonsen_obj_class, input_text("查询字符串: "))
                 elif choice == '6':
-                    print_help(obj_class)
+                    print_help(chonsen_obj_class)
                 elif choice == '7':
                     break
                 elif choice == '8':
