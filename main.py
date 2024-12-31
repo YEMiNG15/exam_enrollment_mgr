@@ -10,6 +10,11 @@ import datetime
 
 e_print = lambda x: print(f"[ERROR] {x}")
 Base = models.Base
+choice_map = {
+    '1':  Candidate,
+    '2': Exam,
+    '3': Registration
+}
 
 
 def input_text(msg):
@@ -243,8 +248,8 @@ def add_registration(query_str_0, query_str_1):
     :return: bool 添加是否成功
     """
     global session
-    candidate = search_candidate(query_str_0, v=False)
-    exam = search_exam(query_str_1, v=False)
+    candidate = search_obj(Candidate, query_str_0, verbose=False)
+    exam = search_obj(Exam, query_str_1, verbose=False)
     if not candidate or not exam:
         e_print("找不到对应的考生或考试")
         return False
@@ -261,22 +266,6 @@ def add_registration(query_str_0, query_str_1):
         session.rollback()
         return False
     return True
-
-
-search_candidate = lambda s, v=True: search_obj(Candidate, s, v)
-search_exam = lambda s, v=True: search_obj(Exam, s, v)
-search_registration = lambda s, v=True: search_obj(Registration, s, v)
-list_candidates = lambda: list_obj(Candidate)
-list_exams = lambda: list_obj(Exam)
-list_registrations = lambda: list_obj(Registration)
-add_candidate = lambda x: add_obj(Candidate, x)
-add_exam = lambda x: add_obj(Exam, x)
-update_candidate = lambda q_1, q_2, v=True: update_obj(Candidate, q_1, q_2, v)
-update_exam = lambda q_1, q_2, v=True: update_obj(Exam, q_1, q_2, v)
-update_registration = lambda q_1, q_2, v=True: update_obj(Registration, q_1, q_2, v)
-del_candidate = lambda x, v=True: del_obj(Candidate, x, v)
-del_exam = lambda x, v=True: del_obj(Exam, x, v)
-del_registration = lambda x, v=True: del_obj(Registration, x, v)
 
 
 def submenu(obj_class):
@@ -324,65 +313,25 @@ if __name__ == '__main__':
         init_db()
     while True:
         choice = main_menu()
-        if choice == '1':
+        if choice in choice_map.keys():
+            obj_class = choice_map[choice]
             while True:
-                choice = submenu(Candidate)
+                choice = submenu(obj_class)
                 if choice == '1':
-                    add_candidate(input_text("创建字符串: "))
+                    if obj_class == Registration:
+                        add_registration(input_text("考生查询字符串: "), input_text("考试查询字符串: "))
+                    else:
+                        add_obj(obj_class, input_text("创建字符串: "))
                 elif choice == '2':
-                    list_candidates()
+                    list_obj(obj_class)
                 elif choice == '3':
-                    search_candidate(input_text("查询字符串: "))
+                    search_obj(obj_class, input_text("查询字符串: "))
                 elif choice == '4':
-                    update_candidate(input_text("查询字符串: "), input_text("更新字符串: "))
+                    update_obj(obj_class, input_text("查询字符串: "), input_text("更新字符串: "))
                 elif choice == '5':
-                    del_candidate(input_text("查询字符串: "))
+                    del_obj(obj_class, input_text("查询字符串: "))
                 elif choice == '6':
-                    print_help(Candidate)
-                elif choice == '7':
-                    break
-                elif choice == '8':
-                    session.close()
-                    exit()
-                else:
-                    e_print("无效的选项")
-        elif choice == '2':
-            while True:
-                choice = submenu(Exam)
-                if choice == '1':
-                    add_exam(input_text("创建字符串: "))
-                elif choice == '2':
-                    list_exams()
-                elif choice == '3':
-                    search_exam(input_text("查询字符串: "))
-                elif choice == '4':
-                    update_exam(input_text("查询字符串: "), input_text("更新字符串: "))
-                elif choice == '5':
-                    del_exam(input_text("查询字符串: "))
-                elif choice == '6':
-                    print_help(Exam)
-                elif choice == '7':
-                    break
-                elif choice == '8':
-                    session.close()
-                    exit()
-                else:
-                    e_print("无效的选项")
-        elif choice == '3':
-            while True:
-                choice = submenu(Registration)
-                if choice == '1':
-                    add_registration(input_text("考生查询字符串: "), input_text("考试查询字符串: "))
-                elif choice == '2':
-                    list_registrations()
-                elif choice == '3':
-                    search_registration(input_text("查询字符串: "))
-                elif choice == '4':
-                    update_registration(input_text("查询字符串: "), input_text("更新字符串: "))
-                elif choice == '5':
-                    del_registration(input_text("查询字符串: "))
-                elif choice == '6':
-                    print_help(Registration)
+                    print_help(obj_class)
                 elif choice == '7':
                     break
                 elif choice == '8':
