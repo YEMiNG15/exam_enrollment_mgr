@@ -235,27 +235,21 @@ def del_obj(obj_class, query_str, verbose=True):
         return True
 
 
-def add_registration(query_str):
+def add_registration(query_str_0, query_str_1):
     """
     添加报名，因为报名对象的创建需要考生和考试对象，所以需要先确认考生和考试对象是否存在
-    :param query_str: 查询字符串，格式为"字段1=值1,字段2=值2,..."
+    :param query_str_0: 查询字符串，格式为"字段1=值1,字段2=值2,..."，用于查询考生
+    :param query_str_1: 查询字符串，格式为"字段1=值1,字段2=值2,..."，用于查询考试
     :return: bool 添加是否成功
     """
     global session
-    query_dict = query_str_to_dict(query_str)
-    if not all([field in Registration.REQUIRED_FIELDS + Registration.OPTIONAL_FIELDS for field in query_dict.keys()]):
-        e_print("不合法的字段")
-        return False
-    if not all([field in query_dict.keys() for field in Registration.REQUIRED_FIELDS]):
-        e_print("缺少必要字段")
-        return False
-    candidate = search_candidate(f"id={query_dict['candidate_id']}", v=False)
-    exam = search_exam(f"id={query_dict['exam_id']}", v=False)
+    candidate = search_candidate(query_str_0, v=False)
+    exam = search_exam(query_str_1, v=False)
     if not candidate or not exam:
         e_print("找不到对应的考生或考试")
         return False
     try:
-        new_registration = Registration(**query_dict)
+        new_registration = Registration(candidate=candidate[0], exam=exam[0])
     except Exception as e:
         e_print(f"未知错误: {e}")
         return False
