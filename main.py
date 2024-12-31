@@ -18,10 +18,10 @@ def input_text(msg):
     :param msg: str 提示信息
     :return: str 用户输入的非空字符串
     """
-    i = input(msg)
+    i = input(msg).strip()
     while i.strip() == '':
-        e_print("不能为空")
-        i = input(msg)
+        e_print("不接受空输入")
+        i = input(msg).strip()
     return i
 
 
