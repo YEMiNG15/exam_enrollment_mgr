@@ -11,7 +11,7 @@ import datetime
 e_print = lambda x: print(f"[ERROR] {x}")
 Base = models.Base
 choice_map = {
-    '1':  Candidate,
+    '1': Candidate,
     '2': Exam,
     '3': Registration
 }
