@@ -316,13 +316,6 @@ def print_help(obj_class):
 
 
 if __name__ == '__main__':
-    def test():
-        add_exam("title=C# Exam,location=W2302")
-        list_exams()
-        update_exam("title=C# Exam", "title=C# Exam,location=W2303")
-        list_exams()
-        del_exam("title=C# Exam")
-        list_exams()
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
