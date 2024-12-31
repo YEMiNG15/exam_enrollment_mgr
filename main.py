@@ -210,7 +210,7 @@ def update_obj(obj_class, query_str_0, query_str_1, verbose=True):
     obj = search_obj(obj_class, query_str_0, verbose=verbose)
     if not obj:
         if verbose:
-            e_print("找不到对应的对象")
+            e_print(f"找不到对应的{TRANSLATION[obj_class.__name__]}")
         return False
     for field, value in query_dict_1.items():
         setattr(obj[0], field, value)
