@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from functools import wraps
 from models import Candidate, Exam, Registration
-from constants import DATABASE_URL, DATABASE_PATH, TRANSLATION, SUBMENUS, HELP_DOC
+from constants import DATABASE_URL, DATABASE_PATH, TRANSLATION, MENUS, HELP_DOC
 import models
 import os
 import datetime
@@ -279,7 +279,7 @@ def submenu(obj_class):
     :return: str 用户输入的选项
     """
     print_str = f"-----{TRANSLATION[obj_class.__name__]}管理------\n"
-    for i, item in enumerate(SUBMENUS[obj_class.__name__]):
+    for i, item in enumerate(MENUS[obj_class.__name__]):
         print_str += f"{i+1}. {item}\n"
     print_str += "-------------------"
     print(print_str)
@@ -292,7 +292,7 @@ def main_menu():
     :return: str 用户输入的选项
     """
     print_str = "----------主菜单----------\n"
-    for i, item in enumerate(SUBMENUS['main']):
+    for i, item in enumerate(MENUS['main']):
         print_str += f"{i+1}. {item}\n"
     print_str += "------------------------"
     print(print_str)
