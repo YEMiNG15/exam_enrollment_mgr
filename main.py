@@ -45,11 +45,17 @@ def init_db():
                             registered_date=datetime.date(2021, 1, 2))
     candidate_2 = Candidate(name='王五', phone_number='19513114514',
                             registered_date=datetime.date(2021, 1, 3))
+    registration_0 = Registration(candidate=candidate_0, exam=exam_0)
+    registration_1 = Registration(candidate=candidate_1, exam=exam_0)
+    registration_2 = Registration(candidate=candidate_2, exam=exam_1)
     session.add(exam_0)
     session.add(exam_1)
     session.add(candidate_0)
     session.add(candidate_1)
     session.add(candidate_2)
+    session.add(registration_0)
+    session.add(registration_1)
+    session.add(registration_2)
     session.commit()
 
 
@@ -220,11 +226,6 @@ def del_obj(obj_class, query_str, verbose=True):
     :return: bool 删除是否成功
     """
     global session
-    query_dict = query_str_to_dict(query_str)
-    if not all([field in obj_class.ALLOWED_SEARCH_FIELDS for field in query_dict.keys()]):
-        if verbose:
-            e_print("不合法的查询字段")
-        return False
     obj = search_obj(obj_class, query_str)
     if not obj:
         if verbose:
